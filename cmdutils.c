@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <math.h>
+#include <setjmp.h>
 
 /* Include only the enabled headers since some compilers (namely, Sun
    Studio) will not omit unused inline functions and create undefined
@@ -71,6 +72,7 @@ static FILE *report_file;
 static int report_file_level = AV_LOG_DEBUG;
 int hide_banner = 0;
 
+jmp_buf *jmp_env;
 void init_opts(void)
 {
 
@@ -94,7 +96,8 @@ void uninit_opts(void)
 
 void log_callback_help(void *ptr, int level, const char *fmt, va_list vl)
 {
-    vfprintf(stdout, fmt, vl);
+	printf("Callback\n");
+    vprintf(fmt, vl);
 }
 
 static void log_callback_report(void *ptr, int level, const char *fmt, va_list vl)
@@ -119,13 +122,17 @@ void register_exit(void (*cb)(int ret))
 {
     program_exit = cb;
 }
-
+void provide_jmp_buf(jmp_buf* exit)
+{
+	jmp_env = exit;
+}
 void exit_program(int ret)
 {
     if (program_exit)
         program_exit(ret);
 
-    exit(ret);
+	longjmp(*jmp_env, 1);
+    //exit(ret);
 }
 
 double parse_number_or_die(const char *context, const char *numstr, int type,
@@ -1951,7 +1958,8 @@ FILE *get_preset_file(char *filename, size_t filename_size,
         char datadir[MAX_PATH], *ls;
         base[2] = NULL;
 
-        if (GetModuleFileNameA(GetModuleHandleA(NULL), datadir, sizeof(datadir) - 1))
+		if (0)
+        //if (GetModuleFileNameA(GetModuleHandleA(NULL), datadir, sizeof(datadir) - 1))
         {
             for (ls = datadir; ls < datadir + strlen(datadir); ls++)
                 if (*ls == '\\') *ls = '/';

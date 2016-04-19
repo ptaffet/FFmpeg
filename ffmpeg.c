@@ -1,3 +1,5 @@
+#undef HAVE_GETPROCESSTIMES
+#undef HAVE_GETPROCESSMEMORYINFO
 /*
  * Copyright (c) 2000-2003 Fabrice Bellard
  *
@@ -75,7 +77,7 @@
 #elif HAVE_GETPROCESSTIMES
 #include <windows.h>
 #endif
-#if HAVE_GETPROCESSMEMORYINFO
+#if 0 & HAVE_GETPROCESSMEMORYINFO
 #include <windows.h>
 #include <psapi.h>
 #endif
@@ -103,6 +105,8 @@
 #include "cmdutils.h"
 
 #include "libavutil/avassert.h"
+
+#include <setjmp.h>
 
 const char program_name[] = "ffmpeg";
 const int program_birth_year = 2000;
@@ -4020,7 +4024,7 @@ static int64_t getmaxrss(void)
     struct rusage rusage;
     getrusage(RUSAGE_SELF, &rusage);
     return (int64_t)rusage.ru_maxrss * 1024;
-#elif HAVE_GETPROCESSMEMORYINFO
+#elif 0 & HAVE_GETPROCESSMEMORYINFO
     HANDLE proc;
     PROCESS_MEMORY_COUNTERS memcounters;
     proc = GetCurrentProcess();
@@ -4035,16 +4039,26 @@ static int64_t getmaxrss(void)
 static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl)
 {
 }
-
-int main(int argc, char **argv)
+static void log_callback_printf(void *ptr, int level, const char *fmt, va_list vl)
+{
+	vprintf(fmt, vl);
+	fflush(stdout);
+}
+int ffmpeg_main(int argc, char **argv)
 {
     int ret;
     int64_t ti;
+	int jmp_val;
+	jmp_buf *jmp_env = malloc(sizeof(jmp_buf));
 
     register_exit(ffmpeg_cleanup);
 
     setvbuf(stderr,NULL,_IONBF,0); /* win32 runtime needs this */
 
+	jmp_val = setjmp(*jmp_env);
+	if (!jmp_val)
+	{
+		provide_jmp_buf(jmp_env);
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
     parse_loglevel(argc, argv, options);
 
@@ -4062,6 +4076,9 @@ int main(int argc, char **argv)
     avfilter_register_all();
     av_register_all();
     avformat_network_init();
+
+	printf("Registering Callback\n");
+	av_log_set_callback(log_callback_printf);
 
     show_banner(argc, argv, options);
 
@@ -4102,5 +4119,6 @@ int main(int argc, char **argv)
         exit_program(69);
 
     exit_program(received_nb_signals ? 255 : main_return_code);
+	}
     return main_return_code;
 }

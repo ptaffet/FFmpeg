@@ -30,6 +30,8 @@
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
 
+#include <setjmp.h>
+
 #ifdef _WIN32
 #undef main /* We don't want SDL to override our main() */
 #endif
@@ -56,6 +58,7 @@ extern int hide_banner;
  */
 void register_exit(void (*cb)(int ret));
 
+void provide_jmp_buf(jmp_buf *exit);
 /**
  * Wraps exit with a program-specific cleanup routine.
  */
