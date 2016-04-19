@@ -173,6 +173,8 @@ av_cold int swr_init(struct SwrContext *s){
     s-> in_ch_layout = s-> user_in_ch_layout;
     s->out_ch_layout = s->user_out_ch_layout;
 
+    s->int_sample_fmt= s->user_int_sample_fmt;
+
     if(av_get_channel_layout_nb_channels(s-> in_ch_layout) > SWR_CH_MAX) {
         av_log(s, AV_LOG_WARNING, "Input channel layout 0x%"PRIx64" is invalid or unsupported.\n", s-> in_ch_layout);
         s->in_ch_layout = 0;
@@ -641,7 +643,7 @@ static int swr_convert_internal(struct SwrContext *s, AudioData *out, int out_co
                 return ret;
             if(ret)
                 for(ch=0; ch<s->dither.noise.ch_count; ch++)
-                    if((ret=swri_get_dither(s, s->dither.noise.ch[ch], s->dither.noise.count, 12345678913579<<ch, s->dither.noise.fmt))<0)
+                    if((ret=swri_get_dither(s, s->dither.noise.ch[ch], s->dither.noise.count, (12345678913579ULL*ch + 3141592) % 2718281828U, s->dither.noise.fmt))<0)
                         return ret;
             av_assert0(s->dither.noise.ch_count == preout->ch_count);
 

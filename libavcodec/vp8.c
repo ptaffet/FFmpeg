@@ -164,7 +164,7 @@ int update_dimensions(VP8Context *s, int width, int height, int is_vp7)
     s->mb_height = (s->avctx->coded_height + 15) / 16;
 
     s->mb_layout = is_vp7 || avctx->active_thread_type == FF_THREAD_SLICE &&
-                   FFMIN(s->num_coeff_partitions, avctx->thread_count) > 1;
+                   avctx->thread_count > 1;
     if (!s->mb_layout) { // Frame threading and one thread
         s->macroblocks_base       = av_mallocz((s->mb_width + s->mb_height * 2 + 1) *
                                                sizeof(*s->macroblocks));
@@ -638,6 +638,11 @@ static int vp8_decode_frame_header(VP8Context *s, const uint8_t *buf, int buf_si
     int header_size, hscale, vscale, ret;
     int width  = s->avctx->width;
     int height = s->avctx->height;
+
+    if (buf_size < 3) {
+        av_log(s->avctx, AV_LOG_ERROR, "Insufficent data (%d) for header\n", buf_size);
+        return AVERROR_INVALIDDATA;
+    }
 
     s->keyframe  = !(buf[0] & 1);
     s->profile   =  (buf[0]>>1) & 7;
@@ -2688,6 +2693,9 @@ av_cold int ff_vp8_decode_free(AVCodecContext *avctx)
 {
     VP8Context *s = avctx->priv_data;
     int i;
+
+    if (!s)
+        return 0;
 
     vp8_decode_flush_impl(avctx, 1);
     for (i = 0; i < FF_ARRAY_ELEMS(s->frames); i++)

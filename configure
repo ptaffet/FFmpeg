@@ -3965,7 +3965,7 @@ elif enabled mips; then
             enable fast_cmov
             enable fast_unaligned
             disable aligned_stack
-            cpuflags="-march=loongson3a -mhard-float"
+            cpuflags="-march=loongson3a -mhard-float -fno-expensive-optimizations"
         ;;
         generic)
             disable mips32r5
@@ -5157,7 +5157,7 @@ enabled libx264           && { use_pkg_config x264 "stdint.h x264.h" x264_encode
                                  warn "using libx264 without pkg-config"; } } &&
                              { check_cpp_condition x264.h "X264_BUILD >= 118" ||
                                die "ERROR: libx264 must be installed and version must be >= 0.118."; }
-enabled libx265           && require_pkg_config x265 x265.h x265_encoder_encode &&
+enabled libx265           && require_pkg_config x265 x265.h x265_api_get &&
                              { check_cpp_condition x265.h "X265_BUILD >= 57" ||
                                die "ERROR: libx265 version must be >= 57."; }
 enabled libxavs           && require libxavs xavs.h xavs_encoder_encode -lxavs
@@ -5950,7 +5950,7 @@ cat > $TMPH <<EOF
 #define FFMPEG_CONFIG_H
 #define FFMPEG_CONFIGURATION "$(c_escape $FFMPEG_CONFIGURATION)"
 #define FFMPEG_LICENSE "$(c_escape $license)"
-#define CONFIG_THIS_YEAR 2015
+#define CONFIG_THIS_YEAR 2016
 #define FFMPEG_DATADIR "$(eval c_escape $datadir)"
 #define AVCONV_DATADIR "$(eval c_escape $datadir)"
 #define CC_IDENT "$(c_escape ${cc_ident:-Unknown compiler})"
